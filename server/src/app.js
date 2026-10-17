@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -41,8 +42,18 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
-app.use(express.static(publicDir));
+function publicDirectory() {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    path.resolve(here, '../public'),
+    path.resolve(here, '../../public'),
+    path.resolve(process.cwd(), 'public'),
+    path.resolve(process.cwd(), '../public'),
+  ];
+  return candidates.find((dir) => existsSync(path.join(dir, 'index.html'))) || candidates[0];
+}
+
+app.use(express.static(publicDirectory()));
 
 app.use((req, res) => {
   res.status(404).type('text/plain').send('Not found');

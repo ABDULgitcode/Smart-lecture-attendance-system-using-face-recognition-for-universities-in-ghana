@@ -268,6 +268,23 @@ studentRouter.delete('/students/:id/face', wrap(async (req, res) => {
   res.json({ deleted: true });
 }));
 
+studentRouter.get('/users', requireRoles('admin'), wrap(async (req, res) => {
+  const allowed = ['student', 'lecturer', 'hod', 'admin'];
+  const filter = {};
+  if (req.query.role) {
+    const role = String(req.query.role);
+    if (!allowed.includes(role)) throw new HttpError(400, 'Unknown role');
+    filter.role = role;
+  } else {
+    filter.role = { $in: ['lecturer', 'hod', 'admin'] };
+  }
+  const users = await User.find(filter)
+    .select('-passwordHash -refreshTokens -resetOtpHash')
+    .sort({ role: 1, email: 1 })
+    .limit(200);
+  res.json({ users: users.map(publicUser) });
+}));
+
 studentRouter.post('/users', requireRoles('admin'), wrap(async (req, res) => {
   const role = requiredText(req.body.role, 'Role');
   if (!['lecturer', 'hod', 'admin'].includes(role)) throw new HttpError(400, 'Choose a staff role');

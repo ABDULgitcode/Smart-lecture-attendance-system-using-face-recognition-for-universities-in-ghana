@@ -158,7 +158,26 @@ body.projector main { max-width: none; }
 body.projector .session { display: block; }
 body.projector .code-value { font-size: min(22vw, 16rem); text-align: center; }
 
+.fields {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.person {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding: 0.45rem 0;
+}
+
+.person input { width: 12rem; }
+
 @media (max-width: 800px) {
   .session { grid-template-columns: 1fr; }
   .top { align-items: flex-start; flex-direction: column; }
+  .person input { width: 100%; }
 }

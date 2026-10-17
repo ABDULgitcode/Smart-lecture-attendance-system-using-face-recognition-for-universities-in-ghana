@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
+import { ensureDb } from '../db.js';
 import { Device, User } from '../models.js';
 import { sha256 } from '../utils/crypto.js';
 
@@ -19,6 +20,11 @@ export async function requireAuth(req, res, next) {
     const token = header.startsWith('Bearer ') ? header.slice(7) : '';
     if (!token) return res.status(401).json({ error: 'Sign in required' });
     const payload = jwt.verify(token, config.accessSecret);
+    try {
+      await ensureDb();
+    } catch {
+      return res.status(503).json({ error: 'Database is unavailable' });
+    }
     const user = await User.findById(payload.sub).select('isActive lastActiveAt role');
     if (!user || !user.isActive) return res.status(401).json({ error: 'Account is not active' });
     if (user.lastActiveAt && Date.now() - new Date(user.lastActiveAt).getTime() > INACTIVITY_MS()) {
@@ -47,6 +53,11 @@ async function attachDevice(req, res, next) {
   try {
     const deviceKey = req.headers['x-device-key'];
     if (!deviceKey) return res.status(401).json({ error: 'Sign in required' });
+    try {
+      await ensureDb();
+    } catch {
+      return res.status(503).json({ error: 'Database is unavailable' });
+    }
     const device = await Device.findOne({ apiKeyHash: sha256(String(deviceKey)) });
     if (!device) return res.status(401).json({ error: 'Unknown device' });
     device.lastSeenAt = new Date();

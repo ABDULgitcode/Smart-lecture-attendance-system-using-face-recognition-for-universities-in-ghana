@@ -16,7 +16,9 @@ services:
       - "8000:8000"
 
   api:
-    build: ./server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     restart: unless-stopped
     environment:
       PORT: 4000

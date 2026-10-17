@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { config } from '../config.js';
+import { ensureDb } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { User } from '../models.js';
 import { createUser, readProfile } from '../services/users.js';
@@ -12,6 +13,17 @@ import { HttpError, isEmail, publicUser, requiredText, wrap } from '../utils/htt
 import { assertPassword, hashPassword, verifyPassword } from '../utils/password.js';
 
 export const authRouter = Router();
+
+authRouter.use(wrap(async (req, res, next) => {
+  if (req.path === '/login' || req.path === '/refresh' || req.path === '/register' || req.path === '/forgot' || req.path === '/reset') {
+    try {
+      await ensureDb();
+    } catch {
+      throw new HttpError(503, 'Database is unavailable');
+    }
+  }
+  next();
+}));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
